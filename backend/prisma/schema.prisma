@@ -1,0 +1,308 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  fullName     String   @map("full_name") @db.VarChar(100)
+  role         String   @default("user") @db.VarChar(20)
+  currency     String   @default("INR") @db.VarChar(3)
+  timezone     String   @default("Asia/Kolkata") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  accounts              Account[]
+  categories            Category[]
+  merchants             Merchant[]
+  transactions          Transaction[]
+  transfers             Transfer[]
+  recurringTransactions RecurringTransaction[]
+  budgets               Budget[]
+  goals                 Goal[]
+  aiInsights            AiInsight[]
+  auditLogs             AuditLog[]
+  refreshTokens         RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  tokenHash    String    @map("token_hash") @db.VarChar(128)
+  deviceId     String?   @map("device_id") @db.VarChar(255)
+  userAgent    String?   @map("user_agent") @db.Text
+  ipAddress    String?   @map("ip_address")
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  replacedById String?   @map("replaced_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy RefreshToken?  @relation("RotationChain", fields: [replacedById], references: [id])
+  replaced   RefreshToken[] @relation("RotationChain")
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+model Account {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  name             String    @db.VarChar(100)
+  type             String    @db.VarChar(50)
+  balance          BigInt    @default(0)
+  currency         String    @default("INR") @db.VarChar(3)
+  isArchived       Boolean   @default(false) @map("is_archived")
+  lastReconciledAt DateTime? @map("last_reconciled_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+  recurringTxns   RecurringTransaction[]
+  sourceTransfers Transfer[]             @relation("SourceAccount")
+  destTransfers   Transfer[]             @relation("DestAccount")
+
+  @@index([userId, isArchived])
+  @@map("accounts")
+}
+
+model Category {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  icon      String   @db.VarChar(50)
+  color     String   @db.VarChar(7)
+  type      String   @db.VarChar(20) // 'expense', 'income', 'transfer'
+  isSystem  Boolean  @default(false) @map("is_system")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user             User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions     Transaction[]
+  recurringTxns    RecurringTransaction[]
+  budgetCategories BudgetCategory[]
+
+  @@unique([userId, name])
+  @@map("categories")
+}
+
+model Merchant {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  name           String   @db.VarChar(200)
+  normalizedName String   @map("normalized_name") @db.VarChar(200)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  recurringTxns RecurringTransaction[]
+
+  @@unique([userId, normalizedName])
+  @@index([userId])
+  @@map("merchants")
+}
+
+model Transaction {
+  id               String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String  @map("user_id") @db.Uuid
+  accountId        String  @map("account_id") @db.Uuid
+  categoryId       String  @map("category_id") @db.Uuid
+  merchantId       String? @map("merchant_id") @db.Uuid
+  recurringId      String? @map("recurring_id") @db.Uuid
+  transferLinkedId String? @map("transfer_linked_id") @db.Uuid
+
+  idempotencyKey  String   @map("idempotency_key") @db.VarChar(64)
+  type            String   @db.VarChar(20) // 'expense', 'income', 'transfer_debit', 'transfer_credit'
+  amount          BigInt
+  currency        String   @default("INR") @db.VarChar(3)
+  description     String?  @db.VarChar(500)
+  notes           String?  @db.Text
+  tags            String[]
+  transactionDate DateTime @map("transaction_date") @db.Timestamptz
+  source          String   @default("manual") @db.VarChar(20)
+  receiptUrl      String?  @map("receipt_url") @db.Text
+
+  syncStatus      String    @default("synced") @map("sync_status") @db.VarChar(10)
+  clientCreatedAt DateTime? @map("client_created_at") @db.Timestamptz
+  version         Int       @default(1)
+  isDeleted       Boolean   @default(false) @map("is_deleted")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account        Account               @relation(fields: [accountId], references: [id])
+  category       Category              @relation(fields: [categoryId], references: [id])
+  merchant       Merchant?             @relation(fields: [merchantId], references: [id])
+  recurringTxn   RecurringTransaction? @relation(fields: [recurringId], references: [id])
+  transferLinked Transaction?          @relation("TransferLinked", fields: [transferLinkedId], references: [id])
+  linkedFrom     Transaction[]         @relation("TransferLinked")
+
+  debitTransfers  Transfer[] @relation("DebitTxn")
+  creditTransfers Transfer[] @relation("CreditTxn")
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, transactionDate(sort: Desc)])
+  @@index([userId, categoryId])
+  @@index([userId, merchantId])
+  @@index([userId, type])
+  @@index([userId, source])
+  @@map("transactions")
+}
+
+model Transfer {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  sourceAccountId String   @map("source_account_id") @db.Uuid
+  destAccountId   String   @map("dest_account_id") @db.Uuid
+  debitTxnId      String   @map("debit_txn_id") @db.Uuid
+  creditTxnId     String   @map("credit_txn_id") @db.Uuid
+  amount          BigInt
+  description     String?  @db.VarChar(500)
+  transferDate    DateTime @map("transfer_date") @db.Timestamptz
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceAccount Account     @relation("SourceAccount", fields: [sourceAccountId], references: [id])
+  destAccount   Account     @relation("DestAccount", fields: [destAccountId], references: [id])
+  debitTxn      Transaction @relation("DebitTxn", fields: [debitTxnId], references: [id])
+  creditTxn     Transaction @relation("CreditTxn", fields: [creditTxnId], references: [id])
+
+  @@index([userId, transferDate(sort: Desc)])
+  @@map("transfers")
+}
+
+model RecurringTransaction {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String  @map("user_id") @db.Uuid
+  categoryId String  @map("category_id") @db.Uuid
+  accountId  String  @map("account_id") @db.Uuid
+  merchantId String? @map("merchant_id") @db.Uuid
+
+  type      String    @db.VarChar(20)
+  amount    BigInt
+  frequency String    @db.VarChar(20) // 'daily', 'weekly', 'monthly', 'yearly'
+  startDate DateTime  @map("start_date") @db.Date
+  endDate   DateTime? @map("end_date") @db.Date
+  isActive  Boolean   @default(true) @map("is_active")
+
+  nextDueDate DateTime @map("next_due_date") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category      @relation(fields: [categoryId], references: [id])
+  account      Account       @relation(fields: [accountId], references: [id])
+  merchant     Merchant?     @relation(fields: [merchantId], references: [id])
+  transactions Transaction[]
+
+  @@map("recurring_transactions")
+}
+
+model Budget {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  period    String   @db.VarChar(20) // 'monthly', 'yearly'
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+
+  totalAmount BigInt   @map("total_amount")
+  totalSpent  BigInt   @default(0) @map("total_spent")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories BudgetCategory[]
+
+  @@map("budgets")
+}
+
+model BudgetCategory {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  budgetId   String   @map("budget_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  amount     BigInt
+  spent      BigInt   @default(0)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([budgetId, categoryId])
+  @@map("budget_categories")
+}
+
+model Goal {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  name          String    @db.VarChar(100)
+  targetAmount  BigInt    @map("target_amount")
+  currentAmount BigInt    @default(0) @map("current_amount")
+  deadline      DateTime? @db.Date
+  status        String    @default("active") @db.VarChar(20) // 'active', 'completed', 'paused'
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions GoalContribution[]
+
+  @@map("goals")
+}
+
+model GoalContribution {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  goalId           String   @map("goal_id") @db.Uuid
+  amount           BigInt
+  contributionDate DateTime @map("contribution_date") @db.Date
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+  @@map("goal_contributions")
+}
+
+model AiInsight {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  type         String   @db.VarChar(50) // 'money_leak', 'anomaly', 'pattern', 'summary'
+  title        String   @db.VarChar(200)
+  content      String   @db.Text
+  sourceData   Json     @map("source_data") // Structured validation claims
+  isActionable Boolean  @default(false) @map("is_actionable")
+  actionType   String?  @map("action_type") @db.VarChar(50)
+  actionData   Json?    @map("action_data")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("ai_insights")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.Uuid
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
