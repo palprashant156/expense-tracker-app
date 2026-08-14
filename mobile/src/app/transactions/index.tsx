@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Search, Filter, ChevronLeft } from 'lucide-react-native';
 
@@ -16,7 +17,7 @@ export default function TransactionListScreen() {
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
-      onPress={() => router.push(\`/transactions/\${item.id}\`)}
+      onPress={() => router.push(`/transactions/${item.id}`)}
       className="flex-row items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 mb-3 rounded-2xl border border-zinc-100 dark:border-zinc-800"
     >
       <View className="flex-row items-center">
@@ -28,7 +29,7 @@ export default function TransactionListScreen() {
           <Text className="text-xs text-zinc-500 dark:text-zinc-400">{item.category} • {item.date}</Text>
         </View>
       </View>
-      <Text className={\`text-base font-semibold \${item.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}\`}>
+      <Text className={`text-base font-semibold ${item.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}`}>
         {item.amount > 0 ? '+' : ''}₹{Math.abs(item.amount).toLocaleString()}
       </Text>
     </TouchableOpacity>

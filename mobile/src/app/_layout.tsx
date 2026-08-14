@@ -1,5 +1,4 @@
 import '../global.css';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
@@ -11,14 +10,12 @@ export default function RootLayout() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen 
           name="transaction/add" 
           options={{ 
-            presentation: 'modal', 
             headerShown: true, 
             title: 'New Transaction',
             headerStyle: {
@@ -31,7 +28,6 @@ export default function RootLayout() {
         <Stack.Screen 
           name="transaction/transfer" 
           options={{ 
-            presentation: 'modal', 
             headerShown: true, 
             title: 'Transfer',
             headerStyle: {
@@ -50,7 +46,6 @@ export default function RootLayout() {
           }} 
         />
       </Stack>
-    </ThemeProvider>
     </QueryClientProvider>
   );
 }

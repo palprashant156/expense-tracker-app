@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ChevronDown, Send, Sparkles } from 'lucide-react-native';
 
@@ -80,21 +81,21 @@ export default function AiChatScreen() {
           {messages.map((msg) => (
             <View 
               key={msg.id} 
-              className={\`mb-4 max-w-[85%] \${msg.role === 'user' ? 'self-end' : 'self-start'}\`}
+              className={`mb-4 max-w-[85%] ${msg.role === 'user' ? 'self-end' : 'self-start'}`}
             >
               <View 
-                className={\`p-4 rounded-2xl \${
+                className={`p-4 rounded-2xl ${
                   msg.role === 'user' 
                     ? 'bg-zinc-900 dark:bg-white rounded-tr-sm' 
                     : 'bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-tl-sm'
-                }\`}
+                }`}
               >
                 <Text 
-                  className={\`text-base \${
+                  className={`text-base ${
                     msg.role === 'user' 
                       ? 'text-white dark:text-zinc-900' 
                       : 'text-zinc-900 dark:text-white'
-                  }\`}
+                  }`}
                 >
                   {msg.content}
                 </Text>
@@ -143,7 +144,7 @@ export default function AiChatScreen() {
           <TouchableOpacity 
             onPress={() => sendMessage(input)}
             disabled={!input.trim()}
-            className={\`p-3 rounded-full \${input.trim() ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-800'}\`}
+            className={`p-3 rounded-full ${input.trim() ? 'bg-zinc-900 dark:bg-white' : 'bg-zinc-200 dark:bg-zinc-800'}`}
           >
             <Send size={20} className={input.trim() ? 'text-white dark:text-zinc-900' : 'text-zinc-400 dark:text-zinc-600'} />
           </TouchableOpacity>

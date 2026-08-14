@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link, router } from 'expo-router';
 import { Input, Button } from '../../components/ui';
+import { useAddTransaction } from '../../hooks/useTransactions';
 
 export default function AddTransactionModal() {
   const [type, setType] = useState<'expense' | 'income'>('expense');
@@ -9,9 +11,25 @@ export default function AddTransactionModal() {
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
 
+  const { mutate: addTransaction, isPending, error } = useAddTransaction();
+
   const handleSave = () => {
-    // Save logic mock
-    router.back();
+    if (!amount) return;
+    
+    // In a real app, you'd fetch the selected category ID and account ID
+    addTransaction({
+      amount: parseInt(amount, 10),
+      type,
+      description,
+      transactionDate: new Date().toISOString(),
+      // Mock IDs to satisfy backend constraints for now
+      categoryId: '00000000-0000-0000-0000-000000000000',
+      accountId: '00000000-0000-0000-0000-000000000000',
+    }, {
+      onSuccess: () => {
+        router.back();
+      }
+    });
   };
 
   return (
@@ -25,18 +43,22 @@ export default function AddTransactionModal() {
           
           {/* Type Toggle */}
           <View className="flex-row bg-zinc-100 dark:bg-zinc-900 rounded-xl p-1 mb-8">
-            <TouchableOpacity 
-              onPress={() => setType('expense')}
-              className={\`flex-1 py-2 items-center rounded-lg \${type === 'expense' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}\`}
-            >
-              <Text className={\`font-medium \${type === 'expense' ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}\`}>Expense</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => setType('income')}
-              className={\`flex-1 py-2 items-center rounded-lg \${type === 'income' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}\`}
-            >
-              <Text className={\`font-medium \${type === 'income' ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}\`}>Income</Text>
-            </TouchableOpacity>
+            <View className={`flex-1 rounded-lg ${type === 'expense' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}>
+              <Pressable 
+                onPress={() => setType('expense')}
+                style={{ paddingVertical: 8, alignItems: 'center' }}
+              >
+                <Text className={`font-medium ${type === 'expense' ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>Expense</Text>
+              </Pressable>
+            </View>
+            <View className={`flex-1 rounded-lg ${type === 'income' ? 'bg-white dark:bg-zinc-800 shadow-sm' : ''}`}>
+              <Pressable 
+                onPress={() => setType('income')}
+                style={{ paddingVertical: 8, alignItems: 'center' }}
+              >
+                <Text className={`font-medium ${type === 'income' ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>Income</Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Amount Input */}
@@ -58,11 +80,13 @@ export default function AddTransactionModal() {
             {/* Category */}
             <View>
               <Text className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2 ml-1">Category</Text>
-              <TouchableOpacity className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-4 flex-row justify-between items-center">
-                <Text className={category ? 'text-zinc-900 dark:text-white' : 'text-zinc-400'}>
-                  {category || 'Select Category'}
-                </Text>
-              </TouchableOpacity>
+              <View className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
+                <Pressable style={{ paddingHorizontal: 16, paddingVertical: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text className={category ? 'text-zinc-900 dark:text-white' : 'text-zinc-400'}>
+                    {category || 'Select Category'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
 
             {/* Note */}
@@ -76,7 +100,13 @@ export default function AddTransactionModal() {
             </View>
           </View>
 
-          <Button title="Save Transaction" onPress={handleSave} className="mt-4" />
+          {error && <Text className="text-red-500 mb-2">{error.message || 'Failed to add transaction'}</Text>}
+          <Button 
+            title={isPending ? "Saving..." : "Save Transaction"} 
+            onPress={handleSave} 
+            className="mt-4" 
+            disabled={isPending || !amount} 
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

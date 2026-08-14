@@ -1,10 +1,16 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Plus, ArrowRightLeft, TrendingUp, Bell } from 'lucide-react-native';
+import { Plus, ArrowRightLeft, TrendingUp, Bell, Sparkles } from 'lucide-react-native';
 import { Card } from '../../components/ui';
+import { useTransactions } from '../../hooks/useTransactions';
+import { useUser } from '../../hooks/useAuth';
 
 export default function DashboardScreen() {
+  const { data: transactions, isLoading, error } = useTransactions();
+  const { data: user } = useUser();
+
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-zinc-950">
       <ScrollView className="flex-1 px-4 pt-2" showsVerticalScrollIndicator={false}>
@@ -12,7 +18,7 @@ export default function DashboardScreen() {
         <View className="flex-row justify-between items-center mb-6 mt-4">
           <View>
             <Text className="text-sm text-zinc-500 dark:text-zinc-400 font-medium mb-1">Good Morning,</Text>
-            <Text className="text-2xl font-bold text-zinc-900 dark:text-white">Alex</Text>
+            <Text className="text-2xl font-bold text-zinc-900 dark:text-white">{user?.fullName || 'User'}</Text>
           </View>
           <TouchableOpacity className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-900">
             <Bell size={20} className="text-zinc-900 dark:text-white" />
@@ -44,21 +50,30 @@ export default function DashboardScreen() {
         {/* Quick Actions */}
         <Text className="text-lg font-bold text-zinc-900 dark:text-white mb-3">Quick Actions</Text>
         <View className="flex-row gap-3 mb-8">
-          <TouchableOpacity className="flex-1 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl items-center justify-center border border-zinc-100 dark:border-zinc-800">
+          <TouchableOpacity 
+            onPress={() => router.push('/transaction/add')}
+            className="flex-1 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl items-center justify-center border border-zinc-100 dark:border-zinc-800"
+          >
             <View className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full mb-2">
               <Plus size={24} className="text-blue-600 dark:text-blue-400" />
             </View>
             <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Add Entry</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-1 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl items-center justify-center border border-zinc-100 dark:border-zinc-800">
+          <TouchableOpacity 
+            onPress={() => router.push('/transaction/transfer')}
+            className="flex-1 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl items-center justify-center border border-zinc-100 dark:border-zinc-800"
+          >
             <View className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full mb-2">
               <ArrowRightLeft size={24} className="text-purple-600 dark:text-purple-400" />
             </View>
             <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Transfer</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-1 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl items-center justify-center border border-zinc-100 dark:border-zinc-800">
+          <TouchableOpacity 
+            onPress={() => router.push('/analytics')}
+            className="flex-1 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-2xl items-center justify-center border border-zinc-100 dark:border-zinc-800"
+          >
             <View className="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-full mb-2">
               <TrendingUp size={24} className="text-emerald-600 dark:text-emerald-400" />
             </View>
@@ -69,53 +84,54 @@ export default function DashboardScreen() {
         {/* Recent Transactions */}
         <View className="flex-row justify-between items-center mb-4">
           <Text className="text-lg font-bold text-zinc-900 dark:text-white">Recent Activity</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/transactions')}>
             <Text className="text-sm font-medium text-blue-600 dark:text-blue-400">See all</Text>
           </TouchableOpacity>
         </View>
 
         <View className="space-y-4 mb-8">
-          {/* Mock Transaction 1 */}
-          <View className="flex-row items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 items-center justify-center mr-3">
-                <Text className="text-orange-600 dark:text-orange-400 text-lg">🍔</Text>
-              </View>
-              <View>
-                <Text className="text-base font-semibold text-zinc-900 dark:text-white">Zomato</Text>
-                <Text className="text-xs text-zinc-500 dark:text-zinc-400">Dining Out • Today</Text>
-              </View>
+          {isLoading && (
+            <View className="py-8 items-center">
+              <ActivityIndicator size="large" color="#3b82f6" />
             </View>
-            <Text className="text-base font-semibold text-zinc-900 dark:text-white">-₹850</Text>
-          </View>
+          )}
 
-          {/* Mock Transaction 2 */}
-          <View className="flex-row items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 items-center justify-center mr-3">
-                <Text className="text-emerald-600 dark:text-emerald-400 text-lg">💰</Text>
-              </View>
-              <View>
-                <Text className="text-base font-semibold text-zinc-900 dark:text-white">Salary</Text>
-                <Text className="text-xs text-zinc-500 dark:text-zinc-400">Income • Yesterday</Text>
-              </View>
+          {error && (
+            <View className="py-4 items-center">
+              <Text className="text-red-500">Failed to load transactions. Is the backend running?</Text>
             </View>
-            <Text className="text-base font-semibold text-emerald-600 dark:text-emerald-400">+₹85,000</Text>
-          </View>
+          )}
 
-          {/* Mock Transaction 3 */}
-          <View className="flex-row items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center mr-3">
-                <Text className="text-blue-600 dark:text-blue-400 text-lg">🎬</Text>
-              </View>
-              <View>
-                <Text className="text-base font-semibold text-zinc-900 dark:text-white">Netflix</Text>
-                <Text className="text-xs text-zinc-500 dark:text-zinc-400">Subscriptions • 2d ago</Text>
-              </View>
+          {!isLoading && !error && (!transactions || transactions.length === 0) && (
+            <View className="py-8 items-center">
+              <Text className="text-zinc-500">No transactions yet.</Text>
             </View>
-            <Text className="text-base font-semibold text-zinc-900 dark:text-white">-₹649</Text>
-          </View>
+          )}
+
+          {!isLoading && transactions?.slice(0, 5).map((txn: any) => (
+            <TouchableOpacity 
+              key={txn.id}
+              onPress={() => router.push(`/transactions/${txn.id}`)} 
+              className="flex-row items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-100 dark:border-zinc-800"
+            >
+              <View className="flex-row items-center">
+                <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${txn.type === 'income' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-orange-100 dark:bg-orange-900/30'}`}>
+                  <Text className="text-lg">{txn.category?.icon || (txn.type === 'income' ? '💰' : '🍔')}</Text>
+                </View>
+                <View>
+                  <Text className="text-base font-semibold text-zinc-900 dark:text-white">
+                    {txn.merchant?.name || txn.category?.name || 'Transaction'}
+                  </Text>
+                  <Text className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {txn.category?.name} • {new Date(txn.transactionDate).toLocaleDateString()}
+                  </Text>
+                </View>
+              </View>
+              <Text className={`text-base font-semibold ${txn.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}`}>
+                {txn.type === 'income' ? '+' : '-'}₹{txn.amount}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </ScrollView>
 

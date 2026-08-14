@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Input, Button } from '../../components/ui';
 import { ArrowDown } from 'lucide-react-native';
@@ -43,11 +44,13 @@ export default function TransferModal() {
           <View className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 mb-6 relative">
             <View className="mb-4">
               <Text className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">From Account</Text>
-              <TouchableOpacity>
-                <Text className="text-lg font-medium text-zinc-900 dark:text-white">
-                  {sourceAccount || 'Select Account'}
-                </Text>
-              </TouchableOpacity>
+              <View>
+                <TouchableOpacity style={{ paddingVertical: 4 }}>
+                  <Text className="text-lg font-medium text-zinc-900 dark:text-white">
+                    {sourceAccount || 'Select Account'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View className="absolute left-6 top-1/2 -mt-4 bg-white dark:bg-zinc-950 p-1.5 rounded-full z-10 border border-zinc-200 dark:border-zinc-800">
@@ -56,11 +59,13 @@ export default function TransferModal() {
 
             <View className="pt-4 border-t border-zinc-200 dark:border-zinc-800">
               <Text className="text-xs text-zinc-500 dark:text-zinc-400 mb-1">To Account</Text>
-              <TouchableOpacity>
-                <Text className="text-lg font-medium text-zinc-900 dark:text-white">
-                  {destAccount || 'Select Account'}
-                </Text>
-              </TouchableOpacity>
+              <View>
+                <TouchableOpacity style={{ paddingVertical: 4 }}>
+                  <Text className="text-lg font-medium text-zinc-900 dark:text-white">
+                    {destAccount || 'Select Account'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 

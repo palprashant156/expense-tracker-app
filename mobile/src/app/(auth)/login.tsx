@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
-import { Link, router } from 'expo-router';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
 import { Button, Input } from '../../components/ui';
+import { useLogin } from '../../hooks/useAuth';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const { mutate: login, isPending, error } = useLogin();
+
   const handleLogin = () => {
-    // Navigate to tabs on mock login
-    router.replace('/(tabs)');
+    login({ email, password });
   };
 
   return (
@@ -49,7 +52,12 @@ export default function LoginScreen() {
             <Text className="text-sm font-medium text-zinc-900 dark:text-zinc-300">Forgot password?</Text>
           </TouchableOpacity>
 
-          <Button title="Sign In" onPress={handleLogin} />
+          {error && <Text className="text-red-500 mb-2">{error.message || 'Login failed'}</Text>}
+          <Button 
+            title={isPending ? "Signing In..." : "Sign In"} 
+            onPress={handleLogin} 
+            disabled={isPending} 
+          />
         </View>
 
         <View className="flex-row justify-center items-center mt-6">

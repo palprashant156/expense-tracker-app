@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ChevronLeft, Edit3, Trash2 } from 'lucide-react-native';
 
@@ -34,7 +35,7 @@ export default function TransactionDetailScreen() {
             <Text className="text-4xl">{emoji}</Text>
           </View>
           <Text className="text-2xl font-bold text-zinc-900 dark:text-white mb-1">{title}</Text>
-          <Text className={\`text-4xl font-bold tracking-tight \${isIncome ? 'text-emerald-500' : 'text-zinc-900 dark:text-white'}\`}>
+          <Text className={`text-4xl font-bold tracking-tight ${isIncome ? 'text-emerald-500' : 'text-zinc-900 dark:text-white'}`}>
             {isIncome ? '+' : '-'}₹{amount.toLocaleString()}
           </Text>
         </View>

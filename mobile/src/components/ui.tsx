@@ -3,7 +3,7 @@ import { TouchableOpacity, Text, View, TextInput } from 'react-native';
 
 export function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <View className={\`bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-zinc-100 dark:border-zinc-800 \${className}\`}>
+    <View className={`bg-white dark:bg-zinc-900 rounded-2xl p-4 shadow-sm border border-zinc-100 dark:border-zinc-800 ${className}`}>
       {children}
     </View>
   );
@@ -27,7 +27,7 @@ export function Button({ onPress, title, variant = 'primary', className = '' }: 
   return (
     <TouchableOpacity 
       onPress={onPress} 
-      className={\`\${baseStyles} \${variants[variant]} \${className}\`}
+      className={`${baseStyles} ${variants[variant]} ${className}`}
       activeOpacity={0.8}
     >
       <Text className={textVariants[variant]}>{title}</Text>
@@ -43,7 +43,7 @@ export function Input({ placeholder, value, onChangeText, secureTextEntry, class
       onChangeText={onChangeText}
       secureTextEntry={secureTextEntry}
       placeholderTextColor="#a1a1aa" // zinc-400
-      className={\`bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-50 \${className}\`}
+      className={`bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-zinc-50 ${className}`}
     />
   );
 }

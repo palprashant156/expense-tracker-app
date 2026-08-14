@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
-import { Link, router } from 'expo-router';
+import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
 import { Button, Input } from '../../components/ui';
+import { useRegister } from '../../hooks/useAuth';
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const { mutate: register, isPending, error } = useRegister();
+
   const handleRegister = () => {
-    // Navigate to tabs on mock register
-    router.replace('/(tabs)');
+    register({ fullName, email, password });
   };
 
   return (
@@ -55,7 +58,12 @@ export default function RegisterScreen() {
             />
           </View>
 
-          <Button title="Create Account" onPress={handleRegister} />
+          {error && <Text className="text-red-500 mb-2">{error.message || 'Registration failed'}</Text>}
+          <Button 
+            title={isPending ? "Creating Account..." : "Create Account"} 
+            onPress={handleRegister} 
+            disabled={isPending} 
+          />
         </View>
 
         <View className="flex-row justify-center items-center mt-6">
