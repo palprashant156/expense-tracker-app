@@ -23,7 +23,7 @@ export class AnalyticsService {
     const transactions = await this.prisma.transaction.findMany({
       where: {
         userId,
-        date: { gte: currentMonth },
+        transactionDate: { gte: currentMonth },
       },
       include: { category: true }
     });

@@ -13,7 +13,6 @@ export class AccountsService {
         type: data.type, // checking, savings, credit, cash
         balance: data.initialBalance || 0,
         currency: data.currency || 'INR',
-        color: data.color,
       },
     });
   }

@@ -24,7 +24,7 @@ export class AuthController {
   }
 
   @Post('refresh')
-  refresh(@Body() body: { refreshToken: string }, @Req() req: any) {
+  refresh(@Body() body: { refreshToken: string; deviceId?: string }, @Req() req: any) {
     return this.authService.refresh(
       body.refreshToken,
       body['deviceId'],

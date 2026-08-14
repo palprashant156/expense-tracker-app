@@ -34,7 +34,7 @@ export class ReconciliationService {
       return { status: 'success', mismatchesFound: 0 };
     }
 
-    this.logger.warn(\`Found \${typedMismatches.length} mismatches. Correcting...\`);
+    this.logger.warn(`Found ${typedMismatches.length} mismatches. Correcting...`);
 
     for (const row of typedMismatches) {
       const { id: accountId, cached, calculated, user_id: userId } = row;
@@ -62,7 +62,7 @@ export class ReconciliationService {
         });
       });
 
-      this.logger.log(\`Corrected account \${accountId}: \${cached} -> \${calculated}\`);
+      this.logger.log(`Corrected account ${accountId}: ${cached} -> ${calculated}`);
     }
 
     return { status: 'success', mismatchesFound: typedMismatches.length };

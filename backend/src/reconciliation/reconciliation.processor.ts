@@ -12,7 +12,7 @@ export class ReconciliationProcessor extends WorkerHost {
   }
 
   async process(job: Job<any, any, string>): Promise<any> {
-    this.logger.log(\`Processing job: \${job.name}\`);
+    this.logger.log(`Processing job: ${job.name}`);
     if (job.name === 'reconcile-balances') {
       return this.reconciliationService.reconcileBalances();
     }

@@ -20,10 +20,10 @@ export class RecurringTransactionsProcessor extends WorkerHost {
     // 3. Update their next_date
     // 4. Update account balances atomically
 
-    const pendingRecurring = await this.prisma.$queryRaw\`
+    const pendingRecurring = await this.prisma.$queryRaw`
       SELECT * FROM recurring_transactions 
       WHERE is_active = TRUE AND next_date <= CURRENT_TIMESTAMP
-    \`;
+    `;
 
     const tasks = pendingRecurring as any[];
     if (tasks.length === 0) {
@@ -31,7 +31,7 @@ export class RecurringTransactionsProcessor extends WorkerHost {
       return { processed: 0 };
     }
 
-    this.logger.log(\`Found \${tasks.length} recurring transactions to process.\`);
+    this.logger.log(`Found ${tasks.length} recurring transactions to process.`);
     
     // Iterate and execute them in transactions...
     // (mock implementation)

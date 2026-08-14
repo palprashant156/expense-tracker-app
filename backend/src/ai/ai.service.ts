@@ -13,7 +13,7 @@ export class AiService {
   }
 
   async processChat(userId: string, message: string) {
-    this.logger.log(\`Processing AI chat for user \${userId}: \${message}\`);
+    this.logger.log(`Processing AI chat for user ${userId}: ${message}`);
 
     // 1. Fetch user context (deterministic source of truth)
     const accounts = await this.prisma.account.findMany({ where: { userId } });
@@ -25,16 +25,16 @@ export class AiService {
       accounts: accounts.map(a => ({ name: a.name, balance: a.balance, currency: a.currency })),
     });
 
-    const prompt = \`
+    const prompt = `
       You are SpendWise AI, an intelligent financial behavior analyst.
       Here is the user's current financial data:
-      \${context}
+      ${context}
       
-      User message: "\${message}"
+      User message: "${message}"
       
       Analyze the message and provide a concise, actionable response. 
       Important: Do not invent any numbers. Only use the numbers provided in the context.
-    \`;
+    `;
 
     try {
       // 2. Call Gemini
@@ -87,7 +87,7 @@ export class AiService {
 
         // If the number is large and not in our deterministic valid numbers set, it's a hallucination!
         if (!validNumbers.has(num)) {
-          this.logger.warn(\`AI Hallucination Detected: Number \${num} not found in deterministic context.\`);
+          this.logger.warn(`AI Hallucination Detected: Number ${num} not found in deterministic context.`);
           // We can either block the response or append a warning. 
           // For strictness: we replace the response with a fallback.
           return "I encountered an error calculating those numbers. Please refer to your dashboard for accurate balances.";
