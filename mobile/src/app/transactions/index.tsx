@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Search, Filter, ChevronLeft } from 'lucide-react-native';
-
-const MOCK_TRANSACTIONS = [
-  { id: '1', title: 'Zomato', category: 'Dining', amount: -850, date: 'Today', emoji: '🍔' },
-  { id: '2', title: 'Salary', category: 'Income', amount: 85000, date: 'Yesterday', emoji: '💰' },
-  { id: '3', title: 'Netflix', category: 'Subscription', amount: -649, date: '2d ago', emoji: '🎬' },
-  { id: '4', title: 'Uber', category: 'Transport', amount: -320, date: '3d ago', emoji: '🚕' },
-  { id: '5', title: 'Groceries', category: 'Shopping', amount: -4500, date: '4d ago', emoji: '🛒' },
-];
+import { useTransactions } from '../../hooks/useTransactions';
 
 export default function TransactionListScreen() {
   const [search, setSearch] = useState('');
+  const { data: transactions, isLoading, error } = useTransactions();
+
+  const filteredTransactions = transactions?.filter(txn => 
+    (txn.description?.toLowerCase() || '').includes(search.toLowerCase()) || 
+    (txn.category?.name?.toLowerCase() || '').includes(search.toLowerCase())
+  );
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity 
@@ -21,16 +20,20 @@ export default function TransactionListScreen() {
       className="flex-row items-center justify-between p-4 bg-zinc-50 dark:bg-zinc-900 mb-3 rounded-2xl border border-zinc-100 dark:border-zinc-800"
     >
       <View className="flex-row items-center">
-        <View className="w-12 h-12 rounded-full bg-zinc-200 dark:bg-zinc-800 items-center justify-center mr-3">
-          <Text className="text-xl">{item.emoji}</Text>
+        <View className={`w-12 h-12 rounded-full items-center justify-center mr-3 ${item.type === 'income' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-orange-100 dark:bg-orange-900/30'}`}>
+          <Text className="text-xl">{item.category?.icon || (item.type === 'income' ? '💰' : '🍔')}</Text>
         </View>
         <View>
-          <Text className="text-base font-semibold text-zinc-900 dark:text-white">{item.title}</Text>
-          <Text className="text-xs text-zinc-500 dark:text-zinc-400">{item.category} • {item.date}</Text>
+          <Text className="text-base font-semibold text-zinc-900 dark:text-white">
+            {item.merchant?.name || item.description || item.category?.name || 'Transaction'}
+          </Text>
+          <Text className="text-xs text-zinc-500 dark:text-zinc-400">
+            {item.category?.name || 'Uncategorized'} • {new Date(item.transactionDate).toLocaleDateString()}
+          </Text>
         </View>
       </View>
-      <Text className={`text-base font-semibold ${item.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}`}>
-        {item.amount > 0 ? '+' : ''}₹{Math.abs(item.amount).toLocaleString()}
+      <Text className={`text-base font-semibold ${item.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}`}>
+        {item.type === 'income' ? '+' : '-'}₹{Number(item.amount).toLocaleString()}
       </Text>
     </TouchableOpacity>
   );
@@ -64,13 +67,28 @@ export default function TransactionListScreen() {
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={MOCK_TRANSACTIONS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 24 }}
-        />
+        {isLoading ? (
+          <View className="flex-1 justify-center items-center">
+            <ActivityIndicator size="large" />
+          </View>
+        ) : error ? (
+          <View className="flex-1 justify-center items-center">
+            <Text className="text-red-500">Failed to load transactions</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filteredTransactions}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            ListEmptyComponent={
+              <View className="py-8 items-center">
+                <Text className="text-zinc-500">No transactions found.</Text>
+              </View>
+            }
+          />
+        )}
       </View>
     </SafeAreaView>
   );

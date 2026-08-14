@@ -39,4 +39,80 @@ export declare class TransactionsService {
         debitTxnId: string;
         creditTxnId: string;
     }>;
+    getTransaction(userId: string, id: string): Promise<{
+        account: {
+            id: string;
+            currency: string;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            userId: string;
+            type: string;
+            balance: bigint;
+            isArchived: boolean;
+            lastReconciledAt: Date | null;
+        };
+        category: {
+            id: string;
+            createdAt: Date;
+            name: string;
+            userId: string | null;
+            type: string;
+            icon: string;
+            color: string;
+            isSystem: boolean;
+        };
+    } & {
+        id: string;
+        currency: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        type: string;
+        accountId: string;
+        categoryId: string;
+        merchantId: string | null;
+        recurringId: string | null;
+        transferLinkedId: string | null;
+        idempotencyKey: string;
+        amount: bigint;
+        description: string | null;
+        notes: string | null;
+        tags: string[];
+        transactionDate: Date;
+        source: string;
+        receiptUrl: string | null;
+        syncStatus: string;
+        clientCreatedAt: Date | null;
+        version: number;
+        isDeleted: boolean;
+    }>;
+    deleteTransaction(userId: string, id: string): Promise<{
+        success: boolean;
+    }>;
+    updateTransaction(userId: string, id: string, data: any): Promise<{
+        id: string;
+        currency: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        type: string;
+        accountId: string;
+        categoryId: string;
+        merchantId: string | null;
+        recurringId: string | null;
+        transferLinkedId: string | null;
+        idempotencyKey: string;
+        amount: bigint;
+        description: string | null;
+        notes: string | null;
+        tags: string[];
+        transactionDate: Date;
+        source: string;
+        receiptUrl: string | null;
+        syncStatus: string;
+        clientCreatedAt: Date | null;
+        version: number;
+        isDeleted: boolean;
+    }>;
 }

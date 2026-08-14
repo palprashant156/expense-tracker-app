@@ -1,16 +1,59 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, useColorScheme } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Moon, Shield, CircleHelp, LogOut, ChevronRight, Bell } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useLogout, useUser } from '../../hooks/useAuth';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as Notifications from 'expo-notifications';
+import { useColorScheme } from 'nativewind';
 
 export default function SettingsScreen() {
-  const colorScheme = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
   const { data: user } = useUser();
   const [isDarkMode, setIsDarkMode] = useState(colorScheme === 'dark');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [faceIdEnabled, setFaceIdEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [faceIdEnabled, setFaceIdEnabled] = useState(false);
+
+  const toggleDarkMode = () => {
+    const newValue = !isDarkMode;
+    setIsDarkMode(newValue);
+    setColorScheme(newValue ? 'dark' : 'light');
+  };
+
+  const toggleFaceId = async (value: boolean) => {
+    if (value) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      
+      if (hasHardware && isEnrolled) {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Authenticate to enable biometric login',
+          cancelLabel: 'Cancel',
+        });
+        if (result.success) setFaceIdEnabled(true);
+        else setFaceIdEnabled(false);
+      } else {
+        alert('Biometric authentication is not available on this device.');
+        setFaceIdEnabled(false);
+      }
+    } else {
+      setFaceIdEnabled(false);
+    }
+  };
+
+  const toggleNotifications = async (value: boolean) => {
+    if (value) {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status === 'granted') setNotificationsEnabled(true);
+      else {
+        alert('Please enable notifications in your phone settings.');
+        setNotificationsEnabled(false);
+      }
+    } else {
+      setNotificationsEnabled(false);
+    }
+  };
 
   const handleLogout = () => {
     // Navigate back to login
@@ -41,53 +84,52 @@ export default function SettingsScreen() {
         {/* Preferences Section */}
         <Text className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3 ml-2">Preferences</Text>
         <View className="bg-white dark:bg-zinc-900 rounded-2xl mb-8 shadow-sm border border-zinc-100 dark:border-zinc-800 overflow-hidden">
-          <View className="flex-row items-center justify-between p-4 border-b border-zinc-100 dark:border-zinc-800">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center mr-4">
-                <Moon size={20} className="text-zinc-700 dark:text-zinc-300" />
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center mr-3">
+                  <Moon size={20} className="text-zinc-700 dark:text-zinc-300" />
+                </View>
+                <Text className="text-base text-zinc-900 dark:text-white font-medium">Dark Mode</Text>
               </View>
-              <Text className="text-base font-medium text-zinc-900 dark:text-white">Dark Mode</Text>
+              <Switch 
+                value={isDarkMode} 
+                onValueChange={toggleDarkMode} 
+                trackColor={{ false: '#e4e4e7', true: '#3b82f6' }}
+              />
             </View>
-            <Switch 
-              value={isDarkMode} 
-              onValueChange={setIsDarkMode}
-              trackColor={{ false: '#e4e4e7', true: '#3b82f6' }}
-              thumbColor="#ffffff"
-            />
+
+            <View className="flex-row items-center justify-between p-4 border-t border-zinc-100 dark:border-zinc-800/50">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center mr-3">
+                  <Bell size={20} className="text-zinc-700 dark:text-zinc-300" />
+                </View>
+                <Text className="text-base text-zinc-900 dark:text-white font-medium">Push Notifications</Text>
+              </View>
+              <Switch 
+                value={notificationsEnabled} 
+                onValueChange={toggleNotifications} 
+                trackColor={{ false: '#e4e4e7', true: '#3b82f6' }}
+              />
+            </View>
           </View>
 
-          <View className="flex-row items-center justify-between p-4">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center mr-4">
-                <Bell size={20} className="text-zinc-700 dark:text-zinc-300" />
+        {/* Security */}
+        <View className="mb-8">
+          <Text className="text-xs font-bold text-zinc-500 dark:text-zinc-400 mb-3 ml-2 uppercase tracking-wider">Security</Text>
+          <View className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm border border-zinc-100 dark:border-zinc-800">
+            <View className="flex-row items-center justify-between p-4">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center mr-3">
+                  <Shield size={20} className="text-zinc-700 dark:text-zinc-300" />
+                </View>
+                <Text className="text-base text-zinc-900 dark:text-white font-medium">Face ID Authentication</Text>
               </View>
-              <Text className="text-base font-medium text-zinc-900 dark:text-white">Push Notifications</Text>
+              <Switch 
+                value={faceIdEnabled} 
+                onValueChange={toggleFaceId} 
+                trackColor={{ false: '#e4e4e7', true: '#3b82f6' }}
+              />
             </View>
-            <Switch 
-              value={notificationsEnabled} 
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: '#e4e4e7', true: '#3b82f6' }}
-              thumbColor="#ffffff"
-            />
-          </View>
-        </View>
-
-        {/* Security Section */}
-        <Text className="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-3 ml-2">Security</Text>
-        <View className="bg-white dark:bg-zinc-900 rounded-2xl mb-8 shadow-sm border border-zinc-100 dark:border-zinc-800 overflow-hidden">
-          <View className="flex-row items-center justify-between p-4">
-            <View className="flex-row items-center">
-              <View className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 items-center justify-center mr-4">
-                <Shield size={20} className="text-zinc-700 dark:text-zinc-300" />
-              </View>
-              <Text className="text-base font-medium text-zinc-900 dark:text-white">Face ID Authentication</Text>
-            </View>
-            <Switch 
-              value={faceIdEnabled} 
-              onValueChange={setFaceIdEnabled}
-              trackColor={{ false: '#e4e4e7', true: '#3b82f6' }}
-              thumbColor="#ffffff"
-            />
           </View>
         </View>
 

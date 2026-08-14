@@ -31,6 +31,13 @@ export class AuthService {
       },
     });
 
+    await this.prisma.account.createMany({
+      data: [
+        { userId: user.id, name: 'Cash', type: 'cash', balance: 0, currency: 'INR' },
+        { userId: user.id, name: 'Bank Account', type: 'checking', balance: 0, currency: 'INR' },
+      ],
+    });
+
     return this.generateTokens(user.id, data.deviceId, data.userAgent, data.ipAddress);
   }
 

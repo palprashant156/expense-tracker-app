@@ -44,3 +44,64 @@ export const useAddTransaction = () => {
     },
   });
 };
+
+export const useAccounts = () => {
+  return useQuery({
+    queryKey: ['accounts'],
+    queryFn: async () => {
+      const response = await api.get('/accounts');
+      return response.data;
+    },
+  });
+};
+
+export const useTransfer = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (transferData: any) => {
+      const response = await api.post('/transactions/transfer', transferData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+};
+
+export const useTransaction = (id: string) => {
+  return useQuery({
+    queryKey: ['transactions', id],
+    queryFn: async (): Promise<Transaction> => {
+      const response = await api.get(`/transactions/${id}`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+};
+
+export const useDeleteTransaction = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/transactions/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+  });
+};
+
+export const useCategories = () => {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const response = await api.get('/categories');
+      return response.data;
+    },
+  });
+};

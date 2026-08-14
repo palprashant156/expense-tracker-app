@@ -1,20 +1,69 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ChevronLeft, Edit3, Trash2 } from 'lucide-react-native';
+import { useTransaction, useDeleteTransaction } from '../../hooks/useTransactions';
 
 export default function TransactionDetailScreen() {
-  const { id } = useLocalSearchParams();
-
-  // Mock data resolution based on ID
-  const isIncome = id === '2';
-  const amount = isIncome ? 85000 : 850;
-  const title = isIncome ? 'Salary' : 'Zomato';
-  const category = isIncome ? 'Income' : 'Dining';
-  const emoji = isIncome ? '💰' : '🍔';
-  const note = isIncome ? 'August Salary from Acme Corp' : 'Dinner with friends';
+  const { id } = useLocalSearchParams<{ id: string }>();
   
+  const { data: transaction, isLoading, error } = useTransaction(id!);
+  const { mutate: deleteTransaction, isPending: isDeleting } = useDeleteTransaction();
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-white dark:bg-zinc-950 justify-center items-center">
+        <ActivityIndicator size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !transaction) {
+    return (
+      <SafeAreaView className="flex-1 bg-white dark:bg-zinc-950 justify-center items-center">
+        <Text className="text-red-500 mb-4">Transaction not found.</Text>
+        <TouchableOpacity onPress={() => router.back()} className="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg">
+          <Text className="text-zinc-900 dark:text-white font-medium">Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const isIncome = transaction.type === 'income';
+  const amount = transaction.amount;
+  const title = transaction.merchant?.name || transaction.description || transaction.category?.name || 'Transaction';
+  const category = transaction.category?.name || 'Uncategorized';
+  const emoji = transaction.category?.icon || (isIncome ? '💰' : '🍔');
+  const note = transaction.notes || transaction.description || 'No notes provided';
+  
+  const dateObj = new Date(transaction.transactionDate);
+  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' • ' + dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Transaction",
+      "Are you sure you want to delete this transaction?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: () => {
+            deleteTransaction(transaction.id, {
+              onSuccess: () => {
+                router.back();
+              },
+              onError: () => {
+                Alert.alert("Error", "Failed to delete transaction");
+              }
+            });
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-zinc-950">
       <ScrollView className="flex-1 px-4 pt-4">
@@ -24,7 +73,7 @@ export default function TransactionDetailScreen() {
             <ChevronLeft size={24} className="text-zinc-900 dark:text-white" />
           </TouchableOpacity>
           <Text className="text-base font-bold text-zinc-900 dark:text-white">Detail</Text>
-          <TouchableOpacity className="p-2">
+          <TouchableOpacity className="p-2" onPress={() => router.push(`/transactions/edit?id=${transaction.id}`)}>
             <Edit3 size={20} className="text-zinc-900 dark:text-white" />
           </TouchableOpacity>
         </View>
@@ -36,7 +85,7 @@ export default function TransactionDetailScreen() {
           </View>
           <Text className="text-2xl font-bold text-zinc-900 dark:text-white mb-1">{title}</Text>
           <Text className={`text-4xl font-bold tracking-tight ${isIncome ? 'text-emerald-500' : 'text-zinc-900 dark:text-white'}`}>
-            {isIncome ? '+' : '-'}₹{amount.toLocaleString()}
+            {isIncome ? '+' : '-'}₹{Number(amount).toLocaleString()}
           </Text>
         </View>
 
@@ -51,7 +100,7 @@ export default function TransactionDetailScreen() {
           
           <View className="flex-row justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-4">
             <Text className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Date</Text>
-            <Text className="text-sm font-semibold text-zinc-900 dark:text-white">August 12, 2026 • 19:42</Text>
+            <Text className="text-sm font-semibold text-zinc-900 dark:text-white">{dateStr}</Text>
           </View>
 
           <View className="flex-row justify-between items-center border-b border-zinc-200 dark:border-zinc-800 pb-4">
@@ -66,9 +115,13 @@ export default function TransactionDetailScreen() {
         </View>
 
         {/* Delete Button */}
-        <TouchableOpacity className="mt-8 flex-row justify-center items-center py-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30">
+        <TouchableOpacity 
+          onPress={handleDelete}
+          disabled={isDeleting}
+          className={`mt-8 flex-row justify-center items-center py-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/30 ${isDeleting ? 'opacity-50' : ''}`}
+        >
           <Trash2 size={20} className="text-red-500 mr-2" />
-          <Text className="text-red-500 font-semibold">Delete Transaction</Text>
+          <Text className="text-red-500 font-semibold">{isDeleting ? 'Deleting...' : 'Delete Transaction'}</Text>
         </TouchableOpacity>
 
       </ScrollView>

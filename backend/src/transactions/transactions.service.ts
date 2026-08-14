@@ -99,4 +99,87 @@ export class TransactionsService {
       return transfer;
     });
   }
+
+  async getTransaction(userId: string, id: string) {
+    const tx = await this.prisma.transaction.findFirst({
+      where: { id, userId, isDeleted: false },
+      include: { category: true, account: true },
+    });
+    if (!tx) throw new NotFoundException('Transaction not found');
+    return tx;
+  }
+
+  async deleteTransaction(userId: string, id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findFirst({
+        where: { id, userId, isDeleted: false },
+      });
+      if (!transaction) throw new NotFoundException('Transaction not found');
+
+      let balanceChange = 0n;
+      if (transaction.type === 'income') balanceChange = -transaction.amount;
+      if (transaction.type === 'expense') balanceChange = transaction.amount;
+
+      if (balanceChange !== 0n) {
+        await tx.account.update({
+          where: { id: transaction.accountId },
+          data: { balance: { increment: balanceChange } },
+        });
+      }
+
+      await tx.transaction.update({
+        where: { id },
+        data: { isDeleted: true },
+      });
+
+      return { success: true };
+    });
+  }
+
+  async updateTransaction(userId: string, id: string, data: any) {
+    return this.prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.findFirst({
+        where: { id, userId, isDeleted: false },
+      });
+      if (!transaction) throw new NotFoundException('Transaction not found');
+
+      // Reverse old balance
+      let oldBalanceChange = 0n;
+      if (transaction.type === 'income') oldBalanceChange = -transaction.amount;
+      if (transaction.type === 'expense') oldBalanceChange = transaction.amount;
+
+      if (oldBalanceChange !== 0n) {
+        await tx.account.update({
+          where: { id: transaction.accountId },
+          data: { balance: { increment: oldBalanceChange } },
+        });
+      }
+
+      // Update the transaction
+      const updated = await tx.transaction.update({
+        where: { id },
+        data: {
+          amount: data.amount !== undefined ? data.amount : transaction.amount,
+          type: data.type !== undefined ? data.type : transaction.type,
+          description: data.description !== undefined ? data.description : transaction.description,
+          categoryId: data.categoryId !== undefined ? data.categoryId : transaction.categoryId,
+          accountId: data.accountId !== undefined ? data.accountId : transaction.accountId,
+        },
+      });
+
+      // Apply new balance
+      let newBalanceChange = 0n;
+      if (updated.type === 'income') newBalanceChange = updated.amount;
+      if (updated.type === 'expense') newBalanceChange = -updated.amount;
+
+      if (newBalanceChange !== 0n) {
+        await tx.account.update({
+          where: { id: updated.accountId },
+          data: { balance: { increment: newBalanceChange } },
+        });
+      }
+
+      return updated;
+    });
+  }
 }
